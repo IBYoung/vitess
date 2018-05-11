@@ -52,7 +52,7 @@ const (
 
 var (
 	// Metrics
-	timings    = stats.NewTimings("MysqlServerTimings", "MySQL server timings")
+	timings    = stats.NewTimings("MysqlServerTimings", "MySQL server timings", "operation")
 	connCount  = stats.NewGauge("MysqlServerConnCount", "Active MySQL server connections")
 	connAccept = stats.NewCounter("MysqlServerConnAccepted", "Connections accepted by MySQL server")
 	connSlow   = stats.NewCounter("MysqlServerConnSlow", "Connections that took more than the configured mysql_slow_connect_warn_threshold to establish")
@@ -396,7 +396,7 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 
 			// Send the end packet only sendFinished is false (results were streamed).
 			if !sendFinished {
-				if err := c.writeEndResult(); err != nil {
+				if err := c.writeEndResult(false); err != nil {
 					log.Errorf("Error writing result to %s: %v", c, err)
 					return
 				}
@@ -531,7 +531,7 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 
 			// Send the end packet only sendFinished is false (results were streamed).
 			if !sendFinished {
-				if err := c.writeEndResult(); err != nil {
+				if err := c.writeEndResult(false); err != nil {
 					log.Errorf("Error writing result to %s: %v", c, err)
 					return
 				}
@@ -610,6 +610,31 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 					return
 				}
 			}
+		case ComSetOption:
+			if operation, ok := c.parseComSetOption(data); ok {
+				switch operation {
+				case 0:
+					c.Capabilities |= CapabilityClientMultiStatements
+				case 1:
+					c.Capabilities &^= CapabilityClientMultiStatements
+				default:
+					log.Errorf("Got unhandled packet from client %v, returning error: %v", c.ConnectionID, data)
+					if err := c.writeErrorPacket(ERUnknownComError, SSUnknownComError, "error handling packet: %v", data); err != nil {
+						log.Errorf("Error writing error packet to client: %v", err)
+						return
+					}
+				}
+				if err := c.writeEndResult(false); err != nil {
+					log.Errorf("Error writeEndResult error %v ", err)
+					return
+				}
+			} else {
+				log.Errorf("Got unhandled packet from client %v, returning error: %v", c.ConnectionID, data)
+				if err := c.writeErrorPacket(ERUnknownComError, SSUnknownComError, "error handling packet: %v", data); err != nil {
+					log.Errorf("Error writing error packet to client: %v", err)
+					return
+				}
+			}
 		default:
 			log.Errorf("Got unhandled packet from %s, returning error: %v", c, data)
 			c.recycleReadPacket()
@@ -636,6 +661,8 @@ func (c *Conn) writeHandshakeV10(serverVersion string, authServer AuthServer, en
 		CapabilityClientProtocol41 |
 		CapabilityClientTransactions |
 		CapabilityClientSecureConnection |
+		CapabilityClientMultiStatements |
+		CapabilityClientMultiResults |
 		CapabilityClientPluginAuth |
 		CapabilityClientPluginAuthLenencClientData |
 		CapabilityClientDeprecateEOF
@@ -740,6 +767,11 @@ func (l *Listener) parseClientHandshakePacket(c *Conn, firstTime bool, data []by
 	// after SSL negotiation, do not overwrite capabilities.
 	if firstTime {
 		c.Capabilities = clientFlags & (CapabilityClientDeprecateEOF | CapabilityClientFoundRows)
+	}
+
+	// set connection capability for executing multi statements
+	if clientFlags&CapabilityClientMultiStatements > 0 {
+		c.Capabilities |= CapabilityClientMultiStatements
 	}
 
 	// Max packet size. Don't do anything with this now.

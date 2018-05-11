@@ -102,17 +102,13 @@ const (
 	// New 4.1 authentication. Always set, expected, never checked.
 	CapabilityClientSecureConnection = 1 << 15
 
-	// CLIENT_MULTI_STATEMENTS 1 << 16
+	// CapabilityClientMultiStatements is CLIENT_MULTI_STATEMENTS
 	// Can handle multiple statements per COM_QUERY and COM_STMT_PREPARE.
-	// Not yet supported.
+	CapabilityClientMultiStatements = 1 << 16
 
-	// CLIENT_MULTI_RESULTS 1 << 17
+	// CapabilityClientMultiResults is CLIENT_MULTI_RESULTS
 	// Can send multiple resultsets for COM_QUERY.
-	// Not yet supported.
-
-	// CLIENT_PS_MULTI_RESULTS 1 << 18
-	// Can send multiple resultsets for COM_STMT_EXECUTE.
-	// Not yet supported.
+	CapabilityClientMultiResults = 1 << 17
 
 	// CapabilityClientPluginAuth is CLIENT_PLUGIN_AUTH.
 	// Client supports plugin authentication.
@@ -171,6 +167,9 @@ const (
 
 	// ComStmtReset is COM_STMT_RESET
 	ComStmtReset = 0x1a
+
+	// ComSetOption is COM_SET_OPTION
+	ComSetOption = 0x1b
 
 	// ComBinlogDumpGTID is COM_BINLOG_DUMP_GTID.
 	ComBinlogDumpGTID = 0x1e
@@ -488,6 +487,9 @@ const (
 const (
 	// ServerStatusAutocommit is SERVER_STATUS_AUTOCOMMIT.
 	ServerStatusAutocommit = 0x0002
+
+	// ServerMoreResultsExists is SERVER_MORE_RESULTS_EXISTS
+	ServerMoreResultsExists = 0x0008
 )
 
 // A few interesting character set values.
