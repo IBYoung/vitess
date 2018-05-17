@@ -1373,7 +1373,7 @@ func (e *Executor) prepare(ctx context.Context, safeSession *SafeSession, sql st
 
 func (e *Executor) handlePrepare(ctx context.Context, safeSession *SafeSession, sql string, bindVars map[string]*querypb.BindVariable, destKeyspace string, destTabletType topodatapb.TabletType, logStats *LogStats) (*sqltypes.Result, error) {
 	// V3 mode.
-	query, comments := sqlparser.SplitTrailingComments(sql)
+	query, comments := sqlparser.SplitMarginComments(sql)
 	vcursor := newVCursorImpl(ctx, safeSession, destKeyspace, destTabletType, comments, e, logStats)
 	plan, err := e.getPlan(
 		vcursor,
