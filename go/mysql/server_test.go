@@ -249,7 +249,7 @@ func TestConnectionFromListener(t *testing.T) {
 		t.Fatalf("net.Listener failed: %v", err)
 	}
 
-	l, err := NewFromListener(listener, authServer, th)
+	l, err := NewFromListener(listener, authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
@@ -281,7 +281,7 @@ func TestConnectionWithoutSourceHost(t *testing.T) {
 		Password: "password1",
 		UserData: "userData1",
 	}}
-	l, err := NewListener("tcp", ":0", authServer, th)
+	l, err := NewListener("tcp", ":0", authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
@@ -318,7 +318,7 @@ func TestConnectionWithSourceHost(t *testing.T) {
 		},
 	}
 
-	l, err := NewListener("tcp", ":0", authServer, th)
+	l, err := NewListener("tcp", ":0", authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
@@ -355,7 +355,7 @@ func TestConnectionUseMysqlNativePasswordWithSourceHost(t *testing.T) {
 		},
 	}
 
-	l, err := NewListener("tcp", ":0", authServer, th)
+	l, err := NewListener("tcp", ":0", authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
@@ -398,7 +398,7 @@ func TestConnectionUnixSocket(t *testing.T) {
 	}
 	os.Remove(unixSocket.Name())
 
-	l, err := NewListener("unix", unixSocket.Name(), authServer, th)
+	l, err := NewListener("unix", unixSocket.Name(), authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
@@ -427,7 +427,7 @@ func TestClientFoundRows(t *testing.T) {
 		Password: "password1",
 		UserData: "userData1",
 	}}
-	l, err := NewListener("tcp", ":0", authServer, th)
+	l, err := NewListener("tcp", ":0", authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
@@ -479,7 +479,7 @@ func TestServer(t *testing.T) {
 		Password: "password1",
 		UserData: "userData1",
 	}}
-	l, err := NewListener("tcp", ":0", authServer, th)
+	l, err := NewListener("tcp", ":0", authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
@@ -669,7 +669,7 @@ func TestClearTextServer(t *testing.T) {
 		UserData: "userData1",
 	}}
 	authServer.Method = MysqlClearPassword
-	l, err := NewListener("tcp", ":0", authServer, th)
+	l, err := NewListener("tcp", ":0", authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
@@ -754,7 +754,7 @@ func TestDialogServer(t *testing.T) {
 		UserData: "userData1",
 	}}
 	authServer.Method = MysqlDialog
-	l, err := NewListener("tcp", ":0", authServer, th)
+	l, err := NewListener("tcp", ":0", authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
@@ -801,7 +801,7 @@ func TestTLSServer(t *testing.T) {
 	// Below, we are enabling --ssl-verify-server-cert, which adds
 	// a check that the common name of the certificate matches the
 	// server host name we connect to.
-	l, err := NewListener("tcp", ":0", authServer, th)
+	l, err := NewListener("tcp", ":0", authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
@@ -880,7 +880,7 @@ func TestErrorCodes(t *testing.T) {
 		Password: "password1",
 		UserData: "userData1",
 	}}
-	l, err := NewListener("tcp", ":0", authServer, th)
+	l, err := NewListener("tcp", ":0", authServer, th, 0, 0)
 	if err != nil {
 		t.Fatalf("NewListener failed: %v", err)
 	}
