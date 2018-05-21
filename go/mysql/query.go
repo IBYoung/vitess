@@ -74,6 +74,18 @@ func (c *Conn) writeComSetOption(operation uint16) error {
 	return nil
 }
 
+// writeComPrepare send prepare statements to server.
+// Returns SQLError(CRServerGone) if it can't.
+func (c *Conn) writeComPrepare(query string) error {
+	data := c.startEphemeralPacket(len(query) + 1)
+	data[0] = ComPrepare
+	copy(data[1:], query)
+	if err := c.writeEphemeralPacket(true); err != nil {
+		return NewSQLError(CRServerGone, SSUnknownSQLState, err.Error())
+	}
+	return nil
+}
+
 // readColumnDefinition reads the next Column Definition packet.
 // Returns a SQLError.
 func (c *Conn) readColumnDefinition(field *querypb.Field, index int) error {

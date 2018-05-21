@@ -76,6 +76,29 @@ func TestComSetOption(t *testing.T) {
 	}
 }
 
+func TestComPrepare(t *testing.T) {
+	listener, sConn, cConn := createSocketPair(t)
+	defer func() {
+		listener.Close()
+		sConn.Close()
+		cConn.Close()
+	}()
+
+	// Write ComPrepare packet, read it, compare.
+	query := "select * from messages where id = ?"
+	if err := cConn.writeComPrepare(query); err != nil {
+		t.Fatalf("writeComPrepare failed: %v", err)
+	}
+	data, err := sConn.ReadPacket()
+	if err != nil || len(data) == 0 || data[0] != ComPrepare {
+		t.Fatalf("sConn.ReadPacket - ComPrepare failed: %v %v", data, err)
+	}
+	got := sConn.parseComPrepare(data)
+	if got != query {
+		t.Errorf("parseComPrepare returned unexpected data: %v", query)
+	}
+}
+
 func TestQueries(t *testing.T) {
 	listener, sConn, cConn := createSocketPair(t)
 	defer func() {
