@@ -464,9 +464,9 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 			c.recycleReadPacket()
 			if err != nil {
 				if statementID != uint32(0) {
-					record := c.prepareData[statementID]
-					if record.paramsCount > 0 {
-						record.bindVars = make(map[string]*querypb.BindVariable, record.paramsCount)
+					prepareData := c.prepareData[statementID]
+					if prepareData.paramsCount > 0 {
+						prepareData.bindVars = make(map[string]*querypb.BindVariable, prepareData.paramsCount)
 					}
 				}
 				if werr := c.writeErrorPacketFromError(err); werr != nil {
