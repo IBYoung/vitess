@@ -116,8 +116,8 @@ func NewSalt() ([]byte, error) {
 	return salt, nil
 }
 
-// scramblePassword computes the hash of the password using 4.1+ method.
-func scramblePassword(salt, password []byte) []byte {
+// ScramblePassword computes the hash of the password using 4.1+ method.
+func ScramblePassword(salt, password []byte) []byte {
 	if len(password) == 0 {
 		return nil
 	}
