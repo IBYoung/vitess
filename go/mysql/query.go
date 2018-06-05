@@ -538,7 +538,7 @@ func (c *Conn) parseComStmtExecute(data []byte) (uint32, byte, error) {
 				return statementID, 0, NewSQLError(CRMalformedPacket, SSUnknownSQLState, "reading parameter flags failed")
 			}
 
-			// Convert MySQL type to Gum type.
+			// Convert MySQL type to Vitess type.
 			valType, err := sqltypes.MySQLToType(int64(mysqlType), int64(flags))
 			if err != nil {
 				return statementID, 0, NewSQLError(CRMalformedPacket, SSUnknownSQLState, "MySQLToType(%v,%v) failed: %v", mysqlType, flags, err)
