@@ -423,11 +423,12 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 		case ComPrepare:
 			query := c.parseComPrepare(data)
 			c.recycleReadPacket()
-			prepareData := &prepareData{}
 			c.statementID++
-			prepareData.statementID = c.statementID
-			prepareData.prepareStmt = query
-			prepareData.paramsCount = uint16(strings.Count(query, "?"))
+			prepareData := &prepareData{
+				statementID: c.statementID,
+				prepareStmt: query,
+				paramsCount: uint16(strings.Count(query, "?")),
+			}
 
 			if prepareData.paramsCount > 0 {
 				prepareData.paramsType = make([]int32, prepareData.paramsCount)

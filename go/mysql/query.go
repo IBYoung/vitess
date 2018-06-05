@@ -86,6 +86,81 @@ func (c *Conn) writeComPrepare(query string) error {
 	return nil
 }
 
+// writeComStmtExecute send COM_STMT_EXECUTE command to server.
+// Returns SQLError(CRServerGone) if it can't.
+func (c *Conn) writeComStmtExecute(stmtID uint32, flags int, newParamsBoundFlag int, parameters []sqltypes.Value) error {
+	paramsLen := len(parameters)
+	nullBitMapLen := (paramsLen + 7) / 8
+	length := 1 + // length of COM_STMT_EXECUTE
+		4 + // statement ID
+		1 + // flags
+		4 + // iteration-count
+		1 // new-params-bound-flag
+
+	if paramsLen > 0 {
+		length += nullBitMapLen // NULL-bitmap length
+		if newParamsBoundFlag == 1 {
+			length += paramsLen * 2
+		}
+		for _, param := range parameters {
+			if !param.IsNull() {
+				l, err := param.ToMySQLLen()
+				if err != nil {
+					return fmt.Errorf("parameter %v get MySQL value length error: %v", param, err)
+				}
+				length += l
+			}
+		}
+	}
+
+	data := c.startEphemeralPacket(length)
+	pos := 0
+
+	pos = writeByte(data, pos, ComStmtExecute)
+	pos = writeUint32(data, pos, uint32(stmtID))
+	pos = writeByte(data, pos, byte(flags))
+	pos = writeUint32(data, pos, 1)
+
+	if paramsLen > 0 {
+		for i := 0; i < nullBitMapLen; i++ {
+			pos = writeByte(data, pos, 0x00)
+		}
+	}
+
+	pos = writeByte(data, pos, byte(newParamsBoundFlag))
+
+	if newParamsBoundFlag == 1 {
+		for _, param := range parameters {
+			typ, flags := sqltypes.TypeToMySQL(param.Type())
+			pos = writeByte(data, pos, byte(typ))
+			pos = writeByte(data, pos, byte(flags))
+		}
+	}
+
+	for i, param := range parameters {
+		if param.IsNull() {
+			bytePos := i/8 + 1
+			bitPos := i % 8
+			data[bytePos] |= 1 << uint(bitPos)
+		} else {
+			v, err := param.ToMySQL()
+			if err != nil {
+				return fmt.Errorf("parameter %v to MySQL value error: %v", param, err)
+			}
+			pos += copy(data[pos:], v)
+		}
+	}
+
+	if pos != length {
+		return fmt.Errorf("internal error packet row: got %v bytes but expected %v", pos, length)
+	}
+
+	if err := c.writeEphemeralPacket(true); err != nil {
+		return NewSQLError(CRServerGone, SSUnknownSQLState, err.Error())
+	}
+	return nil
+}
+
 // readColumnDefinition reads the next Column Definition packet.
 // Returns a SQLError.
 func (c *Conn) readColumnDefinition(field *querypb.Field, index int) error {
@@ -788,13 +863,11 @@ func (c *Conn) parseValues(data []byte, typ querypb.Type, pos int) (interface{},
 		default:
 			return nil, 0, false
 		}
-	case sqltypes.Decimal, sqltypes.Text, sqltypes.Blob, sqltypes.VarChar, sqltypes.VarBinary, sqltypes.Char,
-		sqltypes.Bit, sqltypes.Enum, sqltypes.Set, sqltypes.Geometry:
+	case sqltypes.Decimal, sqltypes.Text, sqltypes.Blob, sqltypes.VarChar, sqltypes.Char,
+		sqltypes.Bit, sqltypes.Enum, sqltypes.Set, sqltypes.Geometry, sqltypes.TypeJSON:
+		return readLenEncString(data, pos)
+	case sqltypes.VarBinary, sqltypes.Binary:
 		return readLenEncStringAsBytes(data, pos)
-	case sqltypes.Binary:
-		return nil, pos, false
-	case sqltypes.TypeJSON:
-		return nil, pos, false
 	default:
 		return nil, pos, false
 	}
