@@ -939,15 +939,8 @@ func (c *Conn) writePreparePacket(result *sqltypes.Result, prepareData *prepareD
 		}
 	}
 
-	if c.Capabilities&CapabilityClientDeprecateEOF == 0 {
-		if err := c.flush(); err != nil {
-			return err
-		}
-	} else {
-		// This will flush too.
-		if err := c.writeOKPacketWithEOFHeader(0, 0, c.StatusFlags, 0); err != nil {
-			return err
-		}
+	if err := c.flush(); err != nil {
+		return err
 	}
 
 	return nil

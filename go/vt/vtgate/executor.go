@@ -1372,7 +1372,7 @@ func (e *Executor) prepare(ctx context.Context, safeSession *SafeSession, sql st
 		}
 	}
 
-	destKeyspace, destTabletType, _, err := e.ParseDestinationTarget(safeSession.TargetString)
+	destKeyspace, destTabletType, dest, err := e.ParseDestinationTarget(safeSession.TargetString)
 	if err != nil {
 		return nil, err
 	}
@@ -1428,8 +1428,10 @@ func (e *Executor) prepare(ctx context.Context, safeSession *SafeSession, sql st
 		}
 		return &sqltypes.Result{}, nil
 	case sqlparser.StmtDDL, sqlparser.StmtBegin, sqlparser.StmtCommit, sqlparser.StmtRollback, sqlparser.StmtSet,
-		sqlparser.StmtShow, sqlparser.StmtUse, sqlparser.StmtOther, sqlparser.StmtComment:
+		sqlparser.StmtUse, sqlparser.StmtOther, sqlparser.StmtComment:
 		return &sqltypes.Result{}, nil
+	case sqlparser.StmtShow:
+		return e.handleShow(ctx, safeSession, sql, bindVars, dest, destKeyspace, destTabletType, logStats)
 	}
 	return nil, vterrors.Errorf(vtrpcpb.Code_INVALID_ARGUMENT, "unrecognized statement: %s", sql)
 }
