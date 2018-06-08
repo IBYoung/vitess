@@ -939,9 +939,5 @@ func (c *Conn) writePreparePacket(result *sqltypes.Result, prepareData *prepareD
 		}
 	}
 
-	if err := c.flush(); err != nil {
-		return err
-	}
-
-	return nil
+	return c.flush()
 }
