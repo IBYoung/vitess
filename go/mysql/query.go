@@ -625,7 +625,8 @@ func (c *Conn) parseComStmtExecute(data []byte) (uint32, byte, error) {
 
 	for i := 0; i < len(prepareData.paramsType); i++ {
 		var val interface{}
-		if prepareData.paramsType[i] == int32(sqltypes.Text) || prepareData.paramsType[i] == int32(sqltypes.Blob) {
+		parameterID := fmt.Sprintf("v%d", i+1)
+		if _, ok := prepareData.bindVars[parameterID]; ok {
 			continue
 		}
 
@@ -644,7 +645,7 @@ func (c *Conn) parseComStmtExecute(data []byte) (uint32, byte, error) {
 			return statementID, 0, NewSQLError(CRMalformedPacket, SSUnknownSQLState, "build converted parameter value failed: %v", err)
 		}
 
-		prepareData.bindVars[fmt.Sprintf("v%d", i+1)] = bv
+		prepareData.bindVars[parameterID] = bv
 	}
 
 	return statementID, cursorType, nil
